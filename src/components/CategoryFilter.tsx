@@ -1,23 +1,12 @@
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-
-interface Subscription {
-  id: number;
-  name: string;
-  email: string;
-  category: string;
-  frequency: string;
-  lastEmail: string;
-  description: string;
-  unreadCount: number;
-  isActive: boolean;
-}
+import { EmailSubscription } from "@/services/gmailService";
 
 interface CategoryFilterProps {
   selectedCategory: string;
   onCategoryChange: (category: string) => void;
-  subscriptions: Subscription[];
+  subscriptions: EmailSubscription[];
 }
 
 const categories = [

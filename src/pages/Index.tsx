@@ -1,18 +1,20 @@
-
-import { useState } from "react";
-import { Mail, Search, Filter, Settings, User, ChevronDown } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Mail, Search, Filter, Settings, User, ChevronDown, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 import SubscriptionCard from "@/components/SubscriptionCard";
 import CategoryFilter from "@/components/CategoryFilter";
 import StatsOverview from "@/components/StatsOverview";
+import GmailAuth from "@/components/GmailAuth";
+import { gmailService, EmailSubscription } from "@/services/gmailService";
 
-// Mock subscription data
-const mockSubscriptions = [
+// Mock subscription data as fallback
+const mockSubscriptions: EmailSubscription[] = [
   {
-    id: 1,
+    id: "1",
     name: "Medium Daily Digest",
     email: "noreply@medium.com",
     category: "newsletter",
@@ -23,7 +25,7 @@ const mockSubscriptions = [
     isActive: true
   },
   {
-    id: 2,
+    id: "2",
     name: "LinkedIn Job Alerts",
     email: "jobs-noreply@linkedin.com",
     category: "jobs",
@@ -34,7 +36,7 @@ const mockSubscriptions = [
     isActive: true
   },
   {
-    id: 3,
+    id: "3",
     name: "Coursera Course Updates",
     email: "no-reply@coursera.org",
     category: "education",
@@ -45,7 +47,7 @@ const mockSubscriptions = [
     isActive: true
   },
   {
-    id: 4,
+    id: "4",
     name: "Amazon Deals",
     email: "store-news@amazon.com",
     category: "shopping",
@@ -56,7 +58,7 @@ const mockSubscriptions = [
     isActive: true
   },
   {
-    id: 5,
+    id: "5",
     name: "TechCrunch Newsletter",
     email: "newsletter@techcrunch.com",
     category: "newsletter",
@@ -67,7 +69,7 @@ const mockSubscriptions = [
     isActive: true
   },
   {
-    id: 6,
+    id: "6",
     name: "Spotify Weekly Recap",
     email: "no-reply@spotify.com",
     category: "entertainment",
@@ -80,9 +82,55 @@ const mockSubscriptions = [
 ];
 
 const Index = () => {
-  const [subscriptions, setSubscriptions] = useState(mockSubscriptions);
+  const [subscriptions, setSubscriptions] = useState<EmailSubscription[]>([]);
+  const [isGmailAuthenticated, setIsGmailAuthenticated] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [usingMockData, setUsingMockData] = useState(false);
+
+  // Load initial data
+  useEffect(() => {
+    if (isGmailAuthenticated) {
+      loadGmailSubscriptions();
+    } else {
+      // Load mock data as fallback
+      setSubscriptions(mockSubscriptions);
+      setUsingMockData(true);
+    }
+  }, [isGmailAuthenticated]);
+
+  const loadGmailSubscriptions = async () => {
+    if (!isGmailAuthenticated) return;
+
+    setIsLoading(true);
+    setError(null);
+    
+    try {
+      const gmailSubscriptions = await gmailService.fetchSubscriptions();
+      setSubscriptions(gmailSubscriptions);
+      setUsingMockData(false);
+    } catch (error) {
+      console.error('Failed to load Gmail subscriptions:', error);
+      setError('Failed to load Gmail subscriptions. Please try again.');
+      // Fallback to mock data
+      setSubscriptions(mockSubscriptions);
+      setUsingMockData(true);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleAuthChange = (authenticated: boolean) => {
+    setIsGmailAuthenticated(authenticated);
+  };
+
+  const handleRefresh = () => {
+    if (isGmailAuthenticated) {
+      loadGmailSubscriptions();
+    }
+  };
 
   const filteredSubscriptions = subscriptions.filter(sub => {
     const matchesCategory = selectedCategory === "all" || sub.category === selectedCategory;
@@ -91,13 +139,13 @@ const Index = () => {
     return matchesCategory && matchesSearch;
   });
 
-  const handleUnsubscribe = (id: number) => {
+  const handleUnsubscribe = (id: string) => {
     setSubscriptions(prev => prev.map(sub => 
       sub.id === id ? { ...sub, isActive: false } : sub
     ));
   };
 
-  const handleResubscribe = (id: number) => {
+  const handleResubscribe = (id: string) => {
     setSubscriptions(prev => prev.map(sub => 
       sub.id === id ? { ...sub, isActive: true } : sub
     ));
@@ -117,6 +165,12 @@ const Index = () => {
             </div>
             
             <div className="flex items-center space-x-4">
+              {isGmailAuthenticated && (
+                <Button onClick={handleRefresh} variant="ghost" size="sm" disabled={isLoading}>
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
+                  {isLoading ? 'Loading...' : 'Refresh'}
+                </Button>
+              )}
               <Button variant="ghost" size="sm">
                 <Settings className="h-4 w-4 mr-2" />
                 Settings
@@ -131,6 +185,25 @@ const Index = () => {
       </header>
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Gmail Authentication */}
+        <GmailAuth onAuthChange={handleAuthChange} />
+
+        {/* Data Source Alert */}
+        {usingMockData && (
+          <Alert className="mb-6">
+            <AlertDescription>
+              Currently showing sample data. Connect your Gmail account above to see your actual email subscriptions.
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Error Alert */}
+        {error && (
+          <Alert variant="destructive" className="mb-6">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         {/* Stats Overview */}
         <StatsOverview subscriptions={subscriptions} />
 
@@ -174,7 +247,15 @@ const Index = () => {
             </Button>
           </div>
 
-          {filteredSubscriptions.length === 0 ? (
+          {isLoading ? (
+            <Card className="bg-white/70 backdrop-blur-sm">
+              <CardContent className="p-12 text-center">
+                <RefreshCw className="h-12 w-12 text-blue-600 mx-auto mb-4 animate-spin" />
+                <h3 className="text-lg font-medium text-gray-900 mb-2">Loading your subscriptions...</h3>
+                <p className="text-gray-500">This may take a moment while we analyze your emails.</p>
+              </CardContent>
+            </Card>
+          ) : filteredSubscriptions.length === 0 ? (
             <Card className="bg-white/70 backdrop-blur-sm">
               <CardContent className="p-12 text-center">
                 <Mail className="h-12 w-12 text-gray-400 mx-auto mb-4" />

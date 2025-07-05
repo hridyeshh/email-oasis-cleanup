@@ -3,23 +3,12 @@ import { Mail, Calendar, TrendingUp, UserX, UserCheck, ExternalLink } from "luci
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-
-interface Subscription {
-  id: number;
-  name: string;
-  email: string;
-  category: string;
-  frequency: string;
-  lastEmail: string;
-  description: string;
-  unreadCount: number;
-  isActive: boolean;
-}
+import { EmailSubscription } from "@/services/gmailService";
 
 interface SubscriptionCardProps {
-  subscription: Subscription;
-  onUnsubscribe: (id: number) => void;
-  onResubscribe: (id: number) => void;
+  subscription: EmailSubscription;
+  onUnsubscribe: (id: string) => void;
+  onResubscribe: (id: string) => void;
 }
 
 const categoryColors = {

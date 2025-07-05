@@ -1,21 +1,10 @@
 
 import { Mail, TrendingUp, AlertCircle, CheckCircle } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
-interface Subscription {
-  id: number;
-  name: string;
-  email: string;
-  category: string;
-  frequency: string;
-  lastEmail: string;
-  description: string;
-  unreadCount: number;
-  isActive: boolean;
-}
+import { EmailSubscription } from "@/services/gmailService";
 
 interface StatsOverviewProps {
-  subscriptions: Subscription[];
+  subscriptions: EmailSubscription[];
 }
 
 const StatsOverview = ({ subscriptions }: StatsOverviewProps) => {
