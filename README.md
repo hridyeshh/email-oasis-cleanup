@@ -400,5 +400,5 @@ npm run test:coverage
 - 📧 Email: hridyesh2309@gmail.com
 - 🔗 LinkedIn: [linkedin.com/in/hridyeshh](https://www.linkedin.com/in/hridyeshh/)
 - 💻 GitHub: [github.com/hridyeshh](https://github.com/hridyeshh)
-- 🌐 Portfolio: [](https://hridyesh.vercel.app/)
+- 🌐 Portfolio: [Hridyesh](https://hridyesh.vercel.app/)
 
